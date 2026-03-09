@@ -5,7 +5,8 @@ import numpy as np
 
 app = FastAPI(title="BAAI - Inteligência Analítica em Saúde")
 
-DB_PATH = r"C:\BAAI\Banco\baai.duckdb"
+# Caminho do banco (funciona no Render)
+DB_PATH = "baai.duckdb"
 
 
 # -----------------------------

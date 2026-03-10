@@ -6,7 +6,7 @@ import numpy as np
 app = FastAPI(title="BAAI - Inteligência Analítica em Saúde")
 
 # Caminho do banco (funciona no Render)
-DB_PATH = "baai.duckdb"
+DB_PATH = "md:baai"
 
 
 # -----------------------------
@@ -142,3 +142,4 @@ def looker_mercado():
     df = clean_dataframe(df)
 
     return df.to_dict(orient="records")
+

@@ -3,23 +3,28 @@ import duckdb
 import pandas as pd
 import numpy as np
 
-app = FastAPI(title="BAAI - Inteligência Analítica em Saúde")
+app = FastAPI(
+    title="BAAI - Inteligência Analítica em Saúde",
+    version="1.0"
+)
 
-# Caminho do banco (funciona no Render)
+# --------------------------------
+# Banco de dados (MotherDuck)
+# --------------------------------
 DB_PATH = "md:baai"
 
 
-# -----------------------------
+# --------------------------------
 # Conexão segura com o banco
-# -----------------------------
+# --------------------------------
 def get_connection():
     return duckdb.connect(DB_PATH, read_only=True)
 
 
-# -----------------------------
+# --------------------------------
 # Limpeza de dados para JSON
 # remove NaN e Infinity
-# -----------------------------
+# --------------------------------
 def clean_dataframe(df):
 
     df = df.replace([np.inf, -np.inf], None)
@@ -28,17 +33,29 @@ def clean_dataframe(df):
     return df
 
 
-# -----------------------------
+# --------------------------------
 # Endpoint raiz
-# -----------------------------
+# --------------------------------
 @app.get("/")
 def home():
-    return {"BAAI": "API ativa"}
+    return {
+        "sistema": "BAAI",
+        "status": "API ativa",
+        "engine": "DuckDB + MotherDuck"
+    }
 
 
-# -----------------------------
+# --------------------------------
+# Health check (Render / Monitoramento)
+# --------------------------------
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
+# --------------------------------
 # Mercado de saúde suplementar
-# -----------------------------
+# --------------------------------
 @app.get("/mercado")
 def mercado():
 
@@ -67,9 +84,9 @@ def mercado():
     return df.to_dict(orient="records")
 
 
-# -----------------------------
+# --------------------------------
 # Capacidade médica
-# -----------------------------
+# --------------------------------
 @app.get("/capacidade_medica")
 def capacidade_medica():
 
@@ -95,9 +112,9 @@ def capacidade_medica():
     return df.to_dict(orient="records")
 
 
-# -----------------------------
+# --------------------------------
 # Capacidade assistencial geral
-# -----------------------------
+# --------------------------------
 @app.get("/capacidade_assistencial")
 def capacidade_assistencial():
 
@@ -123,9 +140,9 @@ def capacidade_assistencial():
     return df.to_dict(orient="records")
 
 
-# -----------------------------
-# Endpoint para Looker Studio
-# -----------------------------
+# --------------------------------
+# Endpoint completo para Looker
+# --------------------------------
 @app.get("/looker/mercado")
 def looker_mercado():
 
@@ -142,4 +159,47 @@ def looker_mercado():
     df = clean_dataframe(df)
 
     return df.to_dict(orient="records")
+
+
+# --------------------------------
+# Endpoint completo capacidade médica
+# --------------------------------
+@app.get("/looker/capacidade_medica")
+def looker_capacidade_medica():
+
+    con = get_connection()
+
+    query = """
+    SELECT *
+    FROM baai_capacidade_medica
+    """
+
+    df = con.execute(query).df()
+    con.close()
+
+    df = clean_dataframe(df)
+
+    return df.to_dict(orient="records")
+
+
+# --------------------------------
+# Endpoint completo capacidade assistencial
+# --------------------------------
+@app.get("/looker/capacidade_assistencial")
+def looker_capacidade_assistencial():
+
+    con = get_connection()
+
+    query = """
+    SELECT *
+    FROM baai_capacidade_assistencial
+    """
+
+    df = con.execute(query).df()
+    con.close()
+
+    df = clean_dataframe(df)
+
+    return df.to_dict(orient="records")
+
 

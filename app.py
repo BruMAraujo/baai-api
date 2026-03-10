@@ -5,27 +5,22 @@ import numpy as np
 
 app = FastAPI(
     title="BAAI - Inteligência Analítica em Saúde",
-    version="1.2"
+    version="1.3"
 )
 
-# --------------------------------
+# -----------------------------
 # conexão MotherDuck
-# --------------------------------
+# -----------------------------
 def get_connection():
 
-    con = duckdb.connect()
-
-    con.execute("INSTALL motherduck;")
-    con.execute("LOAD motherduck;")
-
-    con.execute("ATTACH 'md:baai'")
+    con = duckdb.connect("md:baai")
 
     return con
 
 
-# --------------------------------
+# -----------------------------
 # limpeza dataframe
-# --------------------------------
+# -----------------------------
 def clean_dataframe(df):
 
     df = df.replace([np.inf, -np.inf], None)
@@ -34,9 +29,9 @@ def clean_dataframe(df):
     return df
 
 
-# --------------------------------
+# -----------------------------
 # root
-# --------------------------------
+# -----------------------------
 @app.get("/")
 def home():
 
@@ -47,35 +42,26 @@ def home():
     }
 
 
-# --------------------------------
+# -----------------------------
 # health
-# --------------------------------
+# -----------------------------
 @app.get("/health")
 def health():
 
     return {"status": "ok"}
 
 
-# --------------------------------
+# -----------------------------
 # mercado
-# --------------------------------
+# -----------------------------
 @app.get("/mercado")
 def mercado():
 
     con = get_connection()
 
     query = """
-    SELECT
-        cod_municipio,
-        municipio,
-        populacao,
-        beneficiarios,
-        estabelecimentos,
-        taxa_suplementar,
-        beneficiarios_por_estabelecimento,
-        estab_por_100k_hab
-    FROM baai.baai_mercado_municipio
-    ORDER BY beneficiarios DESC
+    SELECT *
+    FROM baai_mercado_municipio
     LIMIT 100
     """
 
@@ -88,23 +74,17 @@ def mercado():
     return df.to_dict(orient="records")
 
 
-# --------------------------------
+# -----------------------------
 # capacidade médica
-# --------------------------------
+# -----------------------------
 @app.get("/capacidade_medica")
 def capacidade_medica():
 
     con = get_connection()
 
     query = """
-    SELECT
-        municipio,
-        profissao,
-        profissionais,
-        beneficiarios,
-        beneficiarios_por_profissional
-    FROM baai.baai_capacidade_medica
-    ORDER BY beneficiarios_por_profissional DESC
+    SELECT *
+    FROM baai_capacidade_medica
     LIMIT 100
     """
 
@@ -117,23 +97,17 @@ def capacidade_medica():
     return df.to_dict(orient="records")
 
 
-# --------------------------------
+# -----------------------------
 # capacidade assistencial
-# --------------------------------
+# -----------------------------
 @app.get("/capacidade_assistencial")
 def capacidade_assistencial():
 
     con = get_connection()
 
     query = """
-    SELECT
-        municipio,
-        especialidade_grupo,
-        profissionais,
-        beneficiarios,
-        beneficiarios_por_profissional
-    FROM baai.baai_capacidade_assistencial
-    ORDER BY beneficiarios_por_profissional DESC
+    SELECT *
+    FROM baai_capacidade_assistencial
     LIMIT 100
     """
 
@@ -146,9 +120,9 @@ def capacidade_assistencial():
     return df.to_dict(orient="records")
 
 
-# --------------------------------
+# -----------------------------
 # endpoint looker mercado
-# --------------------------------
+# -----------------------------
 @app.get("/looker/mercado")
 def looker_mercado():
 
@@ -156,7 +130,7 @@ def looker_mercado():
 
     query = """
     SELECT *
-    FROM baai.baai_mercado_municipio
+    FROM baai_mercado_municipio
     """
 
     df = con.execute(query).df()
@@ -168,9 +142,9 @@ def looker_mercado():
     return df.to_dict(orient="records")
 
 
-# --------------------------------
+# -----------------------------
 # endpoint looker capacidade médica
-# --------------------------------
+# -----------------------------
 @app.get("/looker/capacidade_medica")
 def looker_capacidade_medica():
 
@@ -178,7 +152,7 @@ def looker_capacidade_medica():
 
     query = """
     SELECT *
-    FROM baai.baai_capacidade_medica
+    FROM baai_capacidade_medica
     """
 
     df = con.execute(query).df()
@@ -190,9 +164,9 @@ def looker_capacidade_medica():
     return df.to_dict(orient="records")
 
 
-# --------------------------------
+# -----------------------------
 # endpoint looker capacidade assistencial
-# --------------------------------
+# -----------------------------
 @app.get("/looker/capacidade_assistencial")
 def looker_capacidade_assistencial():
 
@@ -200,7 +174,7 @@ def looker_capacidade_assistencial():
 
     query = """
     SELECT *
-    FROM baai.baai_capacidade_assistencial
+    FROM baai_capacidade_assistencial
     """
 
     df = con.execute(query).df()

@@ -8,23 +8,26 @@ app = FastAPI(
     version="1.0"
 )
 
-# --------------------------------
-# Banco de dados (MotherDuck)
-# --------------------------------
-DB_PATH = "md:baai"
-
-
-# --------------------------------
-# Conexão segura com o banco
-# --------------------------------
+# -----------------------------
+# Conexão com MotherDuck
+# -----------------------------
 def get_connection():
-    return duckdb.connect(DB_PATH, read_only=True)
+
+    con = duckdb.connect()
+
+    # carrega extensão
+    con.execute("INSTALL motherduck;")
+    con.execute("LOAD motherduck;")
+
+    # conecta no banco cloud
+    con.execute("ATTACH 'md:baai' AS baai_db;")
+
+    return con
 
 
-# --------------------------------
+# -----------------------------
 # Limpeza de dados para JSON
-# remove NaN e Infinity
-# --------------------------------
+# -----------------------------
 def clean_dataframe(df):
 
     df = df.replace([np.inf, -np.inf], None)
@@ -33,9 +36,9 @@ def clean_dataframe(df):
     return df
 
 
-# --------------------------------
+# -----------------------------
 # Endpoint raiz
-# --------------------------------
+# -----------------------------
 @app.get("/")
 def home():
     return {
@@ -45,17 +48,17 @@ def home():
     }
 
 
-# --------------------------------
-# Health check (Render / Monitoramento)
-# --------------------------------
+# -----------------------------
+# Health check
+# -----------------------------
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
 
-# --------------------------------
+# -----------------------------
 # Mercado de saúde suplementar
-# --------------------------------
+# -----------------------------
 @app.get("/mercado")
 def mercado():
 
@@ -71,7 +74,7 @@ def mercado():
         taxa_suplementar,
         beneficiarios_por_estabelecimento,
         estab_por_100k_hab
-    FROM baai_mercado_municipio
+    FROM baai_db.baai_mercado_municipio
     ORDER BY beneficiarios DESC
     LIMIT 100
     """
@@ -84,9 +87,9 @@ def mercado():
     return df.to_dict(orient="records")
 
 
-# --------------------------------
+# -----------------------------
 # Capacidade médica
-# --------------------------------
+# -----------------------------
 @app.get("/capacidade_medica")
 def capacidade_medica():
 
@@ -99,7 +102,7 @@ def capacidade_medica():
         profissionais,
         beneficiarios,
         beneficiarios_por_profissional
-    FROM baai_capacidade_medica
+    FROM baai_db.baai_capacidade_medica
     ORDER BY beneficiarios_por_profissional DESC
     LIMIT 100
     """
@@ -112,9 +115,9 @@ def capacidade_medica():
     return df.to_dict(orient="records")
 
 
-# --------------------------------
+# -----------------------------
 # Capacidade assistencial geral
-# --------------------------------
+# -----------------------------
 @app.get("/capacidade_assistencial")
 def capacidade_assistencial():
 
@@ -127,7 +130,7 @@ def capacidade_assistencial():
         profissionais,
         beneficiarios,
         beneficiarios_por_profissional
-    FROM baai_capacidade_assistencial
+    FROM baai_db.baai_capacidade_assistencial
     ORDER BY beneficiarios_por_profissional DESC
     LIMIT 100
     """
@@ -140,9 +143,9 @@ def capacidade_assistencial():
     return df.to_dict(orient="records")
 
 
-# --------------------------------
-# Endpoint completo para Looker
-# --------------------------------
+# -----------------------------
+# Endpoint completo Looker
+# -----------------------------
 @app.get("/looker/mercado")
 def looker_mercado():
 
@@ -150,7 +153,7 @@ def looker_mercado():
 
     query = """
     SELECT *
-    FROM baai_mercado_municipio
+    FROM baai_db.baai_mercado_municipio
     """
 
     df = con.execute(query).df()
@@ -161,9 +164,10 @@ def looker_mercado():
     return df.to_dict(orient="records")
 
 
-# --------------------------------
-# Endpoint completo capacidade médica
-# --------------------------------
+# -----------------------------
+# Endpoint completo Looker
+# capacidade médica
+# -----------------------------
 @app.get("/looker/capacidade_medica")
 def looker_capacidade_medica():
 
@@ -171,7 +175,7 @@ def looker_capacidade_medica():
 
     query = """
     SELECT *
-    FROM baai_capacidade_medica
+    FROM baai_db.baai_capacidade_medica
     """
 
     df = con.execute(query).df()
@@ -182,9 +186,10 @@ def looker_capacidade_medica():
     return df.to_dict(orient="records")
 
 
-# --------------------------------
-# Endpoint completo capacidade assistencial
-# --------------------------------
+# -----------------------------
+# Endpoint completo Looker
+# capacidade assistencial
+# -----------------------------
 @app.get("/looker/capacidade_assistencial")
 def looker_capacidade_assistencial():
 
@@ -192,7 +197,7 @@ def looker_capacidade_assistencial():
 
     query = """
     SELECT *
-    FROM baai_capacidade_assistencial
+    FROM baai_db.baai_capacidade_assistencial
     """
 
     df = con.execute(query).df()
@@ -201,5 +206,3 @@ def looker_capacidade_assistencial():
     df = clean_dataframe(df)
 
     return df.to_dict(orient="records")
-
-

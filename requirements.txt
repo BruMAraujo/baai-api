@@ -1,5 +1,5 @@
-fastapi
-uvicorn
-duckdb
+fastapi==0.110.0
+uvicorn==0.29.0
+duckdb==1.4.4
 pandas
 numpy

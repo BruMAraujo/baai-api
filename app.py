@@ -165,3 +165,31 @@ def looker_suficiencia():
     df = clean_df(df)
 
     return df.to_dict(orient="records")
+
+from fastapi.responses import PlainTextResponse
+
+@app.get("/looker/mercado_csv", response_class=PlainTextResponse)
+def looker_mercado_csv():
+
+    con = get_connection()
+
+    query = """
+    SELECT
+        cod_municipio,
+        municipio,
+        populacao,
+        beneficiarios,
+        estabelecimentos,
+        taxa_suplementar,
+        beneficiarios_por_estabelecimento,
+        estab_por_100k_hab
+    FROM analytics_mercado_municipio
+    LIMIT 500
+    """
+
+    df = con.execute(query).df()
+    con.close()
+
+    csv = df.to_csv(index=False)
+
+    return csv

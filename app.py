@@ -42,4 +42,59 @@ def run(query: str, uf: str = None):
         return clean_df(df).to_dict(orient="records")
     except Exception as e:
         traceback.print_exc()
-        fr
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ── Root e health ──────────────────────────────────────────────
+@app.get("/")
+def home():
+    return {"sistema": "BAAI", "versao": "2.0", "status": "API ativa"}
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+# ── Endpoints /looker/* (consumidos pelo Looker Studio) ────────
+
+@app.get("/looker/mercado")
+def looker_mercado(uf: str = Query(None)):
+    return run("SELECT * FROM analytics_mercado_municipio", uf)
+
+@app.get("/looker/capacidade")
+def looker_capacidade(uf: str = Query(None)):
+    return run("SELECT * FROM analytics_capacidade_assistencial", uf)
+
+@app.get("/looker/pressao")
+def looker_pressao(uf: str = Query(None)):
+    return run("SELECT * FROM analytics_pressao_assistencial", uf)
+
+@app.get("/looker/suficiencia")
+def looker_suficiencia(uf: str = Query(None)):
+    return run("SELECT * FROM analytics_suficiencia_especialidade", uf)
+
+@app.get("/looker/oportunidade")
+def looker_oportunidade(uf: str = Query(None)):
+    return run("SELECT * FROM analytics_oportunidade_credenciamento", uf)
+
+@app.get("/looker/dashboard_rede")
+def looker_dashboard_rede(uf: str = Query(None)):
+    return run("SELECT * FROM analytics_dashboard_rede", uf)
+
+@app.get("/looker/score")
+def looker_score(uf: str = Query(None)):
+    return run("SELECT * FROM analytics_score_oportunidade", uf)
+
+@app.get("/looker/roi")
+def looker_roi(uf: str = Query(None)):
+    return run("SELECT * FROM analytics_roi_clinica", uf)
+
+# ── Endpoints legados mantidos por compatibilidade ─────────────
+# (redirecionam para os nomes corretos)
+
+@app.get("/mercado")
+def mercado(uf: str = Query(None)):
+    return run("SELECT * FROM analytics_mercado_municipio LIMIT 100")
+
+@app.get("/capacidade_assistencial")
+def capacidade_assistencial():
+    return run("SELECT * FROM analytics_capacidade_assistencial LIMIT 100")

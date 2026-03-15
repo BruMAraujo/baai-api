@@ -80,7 +80,7 @@ def looker_mercado():
             beneficiarios_por_estabelecimento,
             estab_por_100k_hab
         FROM analytics_mercado_municipio
-        LIMIT 2000
+        LIMIT 500
         """
 
         df = con.execute(query).df()
@@ -109,7 +109,7 @@ def looker_capacidade():
     query = """
     SELECT *
     FROM analytics_capacidade_assistencial
-    LIMIT 2000
+    LIMIT 500
     """
 
     df = con.execute(query).df()
@@ -132,7 +132,7 @@ def looker_pressao():
     query = """
     SELECT *
     FROM analytics_pressao_assistencial
-    LIMIT 2000
+    LIMIT 500
     """
 
     df = con.execute(query).df()
@@ -155,7 +155,7 @@ def looker_suficiencia():
     query = """
     SELECT *
     FROM analytics_suficiencia_especialidade
-    LIMIT 2000
+    LIMIT 500
     """
 
     df = con.execute(query).df()

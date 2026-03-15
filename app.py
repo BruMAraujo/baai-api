@@ -1,186 +1,45 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
+from fastapi.middleware.cors import CORSMiddleware
 import duckdb
 import pandas as pd
 import numpy as np
+import os
+import traceback
 
 app = FastAPI(
     title="BAAI - Inteligência Analítica em Saúde",
-    version="1.3"
+    version="2.0"
 )
 
-# -----------------------------
-# conexão MotherDuck
-# -----------------------------
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET"],
+    allow_headers=["*"]
+)
+
+# ── Conexão MotherDuck ─────────────────────────────────────────
 def get_connection():
+    token = os.getenv("MOTHERDUCK_TOKEN")
+    if not token:
+        raise Exception("MOTHERDUCK_TOKEN ausente nas variáveis de ambiente")
+    return duckdb.connect(f"md:baai?motherduck_token={token}")
 
-    con = duckdb.connect("md:baai")
-
-    return con
-
-
-# -----------------------------
-# limpeza dataframe
-# -----------------------------
-def clean_dataframe(df):
-
+# ── Limpeza de dataframe ───────────────────────────────────────
+def clean_df(df):
     df = df.replace([np.inf, -np.inf], None)
     df = df.replace({np.nan: None})
-
     return df
 
-
-# -----------------------------
-# root
-# -----------------------------
-@app.get("/")
-def home():
-
-    return {
-        "sistema": "BAAI",
-        "status": "API ativa",
-        "engine": "DuckDB + MotherDuck"
-    }
-
-
-# -----------------------------
-# health
-# -----------------------------
-@app.get("/health")
-def health():
-
-    return {"status": "ok"}
-
-
-# -----------------------------
-# mercado
-# -----------------------------
-@app.get("/mercado")
-def mercado():
-
-    con = get_connection()
-
-    query = """
-    SELECT *
-    FROM baai_mercado_municipio
-    LIMIT 100
-    """
-
-    df = con.execute(query).df()
-
-    con.close()
-
-    df = clean_dataframe(df)
-
-    return df.to_dict(orient="records")
-
-
-# -----------------------------
-# capacidade médica
-# -----------------------------
-@app.get("/capacidade_medica")
-def capacidade_medica():
-
-    con = get_connection()
-
-    query = """
-    SELECT *
-    FROM baai_capacidade_medica
-    LIMIT 100
-    """
-
-    df = con.execute(query).df()
-
-    con.close()
-
-    df = clean_dataframe(df)
-
-    return df.to_dict(orient="records")
-
-
-# -----------------------------
-# capacidade assistencial
-# -----------------------------
-@app.get("/capacidade_assistencial")
-def capacidade_assistencial():
-
-    con = get_connection()
-
-    query = """
-    SELECT *
-    FROM baai_capacidade_assistencial
-    LIMIT 100
-    """
-
-    df = con.execute(query).df()
-
-    con.close()
-
-    df = clean_dataframe(df)
-
-    return df.to_dict(orient="records")
-
-
-# -----------------------------
-# endpoint looker mercado
-# -----------------------------
-@app.get("/looker/mercado")
-def looker_mercado():
-
-    con = get_connection()
-
-    query = """
-    SELECT *
-    FROM baai_mercado_municipio
-    """
-
-    df = con.execute(query).df()
-
-    con.close()
-
-    df = clean_dataframe(df)
-
-    return df.to_dict(orient="records")
-
-
-# -----------------------------
-# endpoint looker capacidade médica
-# -----------------------------
-@app.get("/looker/capacidade_medica")
-def looker_capacidade_medica():
-
-    con = get_connection()
-
-    query = """
-    SELECT *
-    FROM baai_capacidade_medica
-    """
-
-    df = con.execute(query).df()
-
-    con.close()
-
-    df = clean_dataframe(df)
-
-    return df.to_dict(orient="records")
-
-
-# -----------------------------
-# endpoint looker capacidade assistencial
-# -----------------------------
-@app.get("/looker/capacidade_assistencial")
-def looker_capacidade_assistencial():
-
-    con = get_connection()
-
-    query = """
-    SELECT *
-    FROM baai_capacidade_assistencial
-    """
-
-    df = con.execute(query).df()
-
-    con.close()
-
-    df = clean_dataframe(df)
-
-    return df.to_dict(orient="records")
+# ── Executor genérico ──────────────────────────────────────────
+def run(query: str, uf: str = None):
+    try:
+        con = get_connection()
+        if uf:
+            query += f" WHERE uf_ibge = '{uf}'"
+        df = con.execute(query).df()
+        con.close()
+        return clean_df(df).to_dict(orient="records")
+    except Exception as e:
+        traceback.print_exc()
+        fr
